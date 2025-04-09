@@ -9,7 +9,6 @@ if not WebhookURL then
 	return
 end
 
--- Tìm GUI nhận thưởng
 local rewardGui
 repeat task.wait()
 	rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
@@ -42,14 +41,19 @@ if not requestFunc then
 end
 
 local lastItemSent = ""
+local totalItems = 0
 
 local function sendWebhook(itemName)
+	totalItems += 1
 	local data = {
 		username = Player.Name .. " - AFK Bot",
 		embeds = {{
-			title = "🎁 Vật phẩm nhận được",
+			title = "🎁 Nhận được vật phẩm mới!",
 			description = "**" .. itemName .. "**",
-			color = 65280
+			color = 65280,
+			footer = {
+				text = "Tổng số vật phẩm đã nhận: " .. totalItems
+			}
 		}}
 	}
 	local success, err = pcall(function()
@@ -64,7 +68,7 @@ local function sendWebhook(itemName)
 	end)
 
 	if success then
-		print("[✅] Đã gửi item:", itemName)
+		print("[✅] Gửi thành công:", itemName, "| Tổng:", totalItems)
 	else
 		warn("[❌] Lỗi gửi webhook:", err)
 	end
@@ -82,4 +86,4 @@ scrollingFrame.ChildAdded:Connect(function(child)
 	end
 end)
 
-print("[👀] Đang theo dõi phần thưởng AFK...")
+print("[👀] Đang theo dõi vật phẩm nhận được từ AFK...")

@@ -1,27 +1,16 @@
--- ✅ Script gửi Webhook AFK Reward - dùng với setting
--- Dùng: setting = { ['Webhook Url'] = "https://discord.com/api/webhooks/..." }
--- loadstring(game:HttpGet("..."))(setting)
-
+-- ✅ AFK Item Webhook Tracker - hỗ trợ nhiều executor
 return function(setting)
     local HttpService = game:GetService("HttpService")
     local Players = game:GetService("Players")
     local Player = Players.LocalPlayer
 
-    -- Lấy Webhook URL từ setting
     local WebhookURL = setting and setting["Webhook Url"]
     if not WebhookURL then
         warn("[❌] Thiếu Webhook Url trong setting!")
         return
     end
 
-    -- Kiểm tra executor có hỗ trợ HTTP request không
-    local requestFunc = http_request or request or (syn and syn.request)
-    if not requestFunc then
-        warn("[❌] Executor không hỗ trợ gửi HTTP request!")
-        return
-    end
-
-    -- Đợi GUI nhận thưởng xuất hiện
+    -- Chờ GUI nhận thưởng xuất hiện
     local rewardGui
     repeat
         rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
@@ -38,52 +27,61 @@ return function(setting)
 
     local lastItemSent = ""
 
-    -- Gửi thông tin item về webhook
+    -- Hàm gửi Webhook
     local function sendWebhook(itemName)
         local data = {
-            username = "AFK Rewards Bot",
+            username = Player.Name .. " - AFK Bot",
             embeds = {{
                 title = "🎁 Nhận được vật phẩm mới!",
-                description = "**" .. itemName .. "** từ **" .. Player.Name .. "**",
+                description = "**" .. itemName .. "**",
                 color = 65280
             }}
         }
 
-        local success, err = pcall(function()
-            requestFunc({
-                Url = WebhookURL,
-                Method = "POST",
-                Headers = {
-                    ["Content-Type"] = "application/json"
-                },
-                Body = HttpService:JSONEncode(data)
-            })
-        end)
+        local jsonData = HttpService:JSONEncode(data)
+        local requestFunc =
+            (syn and syn.request) or
+            (http and http.request) or
+            (request) or
+            (fluxus and fluxus.request) or
+            (krnl and krnl.request)
 
-        if success then
-            print("[✅] Đã gửi item về Webhook:", itemName)
-        else
-            warn("[❌] Webhook lỗi:", err)
-        end
-    end
+        if requestFunc then
+            local success, err = pcall(function()
+                requestFunc({
+                    Url = WebhookURL,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = jsonData
+                })
+            end)
 
-    -- Theo dõi phần tử mới trong ScrollingFrame
-    local function onChildAdded(child)
-        task.wait(0.2)
-        local rewardNameLabel = child:FindFirstChild("RewardName")
-        if rewardNameLabel and rewardNameLabel:IsA("TextLabel") then
-            local itemName = rewardNameLabel.Text
-            if itemName and itemName ~= lastItemSent then
-                lastItemSent = itemName
-                sendWebhook(itemName)
+            if success then
+                print("[✅] Đã gửi item về Webhook:", itemName)
+            else
+                warn("[❌] Webhook lỗi:", err)
             end
+        else
+            warn("[❌] Không tìm thấy hàm gửi Webhook phù hợp!")
         end
     end
 
-    -- Theo dõi ScrollingFrame trong Received
+    -- Theo dõi item mới được thêm vào
     local scrollingFrame = receivedFrame:FindFirstChild("ScrollingFrame")
     if scrollingFrame then
-        scrollingFrame.ChildAdded:Connect(onChildAdded)
+        scrollingFrame.ChildAdded:Connect(function(child)
+            task.wait(0.2)
+            local rewardNameLabel = child:FindFirstChild("RewardName")
+            if rewardNameLabel and rewardNameLabel:IsA("TextLabel") then
+                local itemName = rewardNameLabel.Text
+                if itemName and itemName ~= lastItemSent then
+                    lastItemSent = itemName
+                    sendWebhook(itemName)
+                end
+            end
+        end)
         print("[👀] Đang theo dõi item trong khu AFK...")
     else
         warn("[❌] Không tìm thấy ScrollingFrame trong Received!")

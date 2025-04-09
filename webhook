@@ -42,7 +42,18 @@ local function onChildAdded(child)
                 username = "AFK Rewards Bot",
                 embeds = {{
                     title = "🎁 Nhận được vật phẩm mới!",
-                    description = "**" .. itemName .. "**",
+                    fields = {
+                        {
+                            name = "🎁 Item",
+                            value = "**" .. itemName .. "**",
+                            inline = true
+                        },
+                        {
+                            name = "🙋 Người chơi",
+                            value = "**" .. Player.Name .. "**",
+                            inline = true
+                        }
+                    },
                     color = 65280
                 }}
             }

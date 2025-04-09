@@ -1,89 +1,97 @@
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
+-- ✅ Script gửi Webhook AFK Reward - dùng với setting
+-- Cần truyền bảng setting = { ['Webhook Url'] = "..." }
 
-local setting = getgenv().setting or _G.setting
-local WebhookURL = setting and setting["Webhook Url"]
-if not WebhookURL then
-	warn("[❌] Thiếu Webhook Url trong setting!")
-	return
+return function(setting)
+    local HttpService = game:GetService("HttpService")
+    local Players = game:GetService("Players")
+    local Player = Players.LocalPlayer
+
+    -- Lấy URL từ setting
+    local WebhookURL = setting and setting["Webhook Url"]
+    if not WebhookURL then
+        warn("[❌] Thiếu Webhook Url trong setting!")
+        return
+    end
+
+    -- Đợi GUI nhận thưởng xuất hiện
+    local rewardGui
+    repeat
+        rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
+        task.wait(1)
+    until rewardGui and rewardGui:FindFirstChild("Frame")
+
+    local receivedFrame = rewardGui.Frame:FindFirstChild("Recieved")
+    if not receivedFrame then
+        warn("[❌] Không tìm thấy khung nhận thưởng!")
+        return
+    end
+
+    print("[✅] Đã tìm thấy giao diện nhận thưởng AFK!")
+
+    local lastItemSent = ""
+    local totalItems = 0
+
+    -- Tự động chọn hàm gửi HTTP theo executor
+    local requestFunc =
+        (syn and syn.request) or
+        (http and http.request) or
+        (request) or
+        (fluxus and fluxus.request) or
+        (krnl and krnl.request)
+
+    if not requestFunc then
+        warn("[❌] Không tìm thấy hàm gửi Webhook phù hợp! Executor của bạn không hỗ trợ HTTP.")
+        return
+    end
+
+    -- Gửi webhook
+    local function sendWebhook(itemName)
+        totalItems += 1
+        local data = {
+            username = "AFK Rewards Bot",
+            embeds = {{
+                title = "🎁 Nhận được vật phẩm mới!",
+                description = string.format("⭐️ **%s**\n🧮 Tổng số vật phẩm đã nhận: `%d`\n👤 Người nhận: **%s**",
+                    itemName, totalItems, Player.Name),
+                color = 65280
+            }}
+        }
+
+        local success, err = pcall(function()
+            requestFunc({
+                Url = WebhookURL,
+                Method = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode(data)
+            })
+        end)
+
+        if success then
+            print("[✅] Đã gửi item về Webhook:", itemName)
+        else
+            warn("[❌] Webhook lỗi:", err)
+        end
+    end
+
+    -- Theo dõi phần tử mới trong ScrollingFrame
+    local function onChildAdded(child)
+        task.wait(0.2)
+        local rewardNameLabel = child:FindFirstChild("RewardName")
+        if rewardNameLabel and rewardNameLabel:IsA("TextLabel") then
+            local itemName = rewardNameLabel.Text
+            if itemName and itemName ~= lastItemSent then
+                lastItemSent = itemName
+                sendWebhook(itemName)
+            end
+        end
+    end
+
+    -- Bắt đầu theo dõi các phần tử nhận thưởng
+    local scrollingFrame = receivedFrame:FindFirstChild("ScrollingFrame")
+    if scrollingFrame then
+        scrollingFrame.ChildAdded:Connect(onChildAdded)
+        print("[👀] Đang theo dõi item trong khu AFK...")
+    else
+        warn("[❌] Không tìm thấy ScrollingFrame trong Received!")
+    end
 end
-
-local rewardGui
-repeat task.wait()
-	rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
-until rewardGui and rewardGui:FindFirstChild("Frame")
-
-local receivedFrame = rewardGui.Frame:FindFirstChild("Recieved")
-if not receivedFrame then
-	warn("[❌] Không tìm thấy khung nhận thưởng!")
-	return
-end
-
-local scrollingFrame = receivedFrame:FindFirstChild("ScrollingFrame")
-if not scrollingFrame then
-	warn("[❌] Không tìm thấy ScrollingFrame!")
-	return
-end
-
-print("[✅] Đã vào khu AFK và tìm thấy khung nhận thưởng!")
-
-local requestFunc =
-	(syn and syn.request)
-	or (http and http.request)
-	or (request)
-	or (fluxus and fluxus.request)
-	or (krnl and krnl.request)
-
-if not requestFunc then
-	warn("[❌] Không tìm thấy hàm gửi Webhook phù hợp! Executor không hỗ trợ.")
-	return
-end
-
-local lastItemSent = ""
-local totalItems = 0
-
-local function sendWebhook(itemName)
-	totalItems += 1
-	local data = {
-		username = Player.Name .. " - AFK Bot",
-		embeds = {{
-			title = "🎁 Nhận được vật phẩm mới!",
-			description = "**" .. itemName .. "**",
-			color = 65280,
-			footer = {
-				text = "Tổng số vật phẩm đã nhận: " .. totalItems
-			}
-		}}
-	}
-	local success, err = pcall(function()
-		requestFunc({
-			Url = WebhookURL,
-			Method = "POST",
-			Headers = {
-				["Content-Type"] = "application/json"
-			},
-			Body = HttpService:JSONEncode(data)
-		})
-	end)
-
-	if success then
-		print("[✅] Gửi thành công:", itemName, "| Tổng:", totalItems)
-	else
-		warn("[❌] Lỗi gửi webhook:", err)
-	end
-end
-
-scrollingFrame.ChildAdded:Connect(function(child)
-	task.wait(0.2)
-	local label = child:FindFirstChild("RewardName")
-	if label and label:IsA("TextLabel") then
-		local itemName = label.Text
-		if itemName and itemName ~= lastItemSent then
-			lastItemSent = itemName
-			sendWebhook(itemName)
-		end
-	end
-end)
-
-print("[👀] Đang theo dõi vật phẩm nhận được từ AFK...")

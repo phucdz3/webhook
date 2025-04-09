@@ -5,85 +5,91 @@ local Player = Players.LocalPlayer
 local setting = getgenv().setting or _G.setting
 local WebhookURL = setting and setting["Webhook Url"]
 if not WebhookURL then
-	warn("[❌] Thiếu Webhook Url trong setting!")
-	return
+    warn("[❌] Thiếu Webhook Url trong setting!")
+    return
 end
 
+-- Tìm GUI nhận thưởng
 local rewardGui
 repeat task.wait()
-	rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
+    rewardGui = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("CountDown")
 until rewardGui and rewardGui:FindFirstChild("Frame")
 
 local receivedFrame = rewardGui.Frame:FindFirstChild("Recieved")
 if not receivedFrame then
-	warn("[❌] Không tìm thấy khung nhận thưởng!")
-	return
+    warn("[❌] Không tìm thấy khung nhận thưởng!")
+    return
 end
 
 local scrollingFrame = receivedFrame:FindFirstChild("ScrollingFrame")
 if not scrollingFrame then
-	warn("[❌] Không tìm thấy ScrollingFrame!")
-	return
+    warn("[❌] Không tìm thấy ScrollingFrame!")
+    return
 end
 
 print("[✅] Đã vào khu AFK và tìm thấy khung nhận thưởng!")
 
 local requestFunc =
-	(syn and syn.request)
-	or (http and http.request)
-	or (request)
-	or (fluxus and fluxus.request)
-	or (krnl and krnl.request)
+    (syn and syn.request)
+    or (http and http.request)
+    or (request)
+    or (fluxus and fluxus.request)
+    or (krnl and krnl.request)
 
 if not requestFunc then
-	warn("[❌] Không tìm thấy hàm gửi Webhook phù hợp! Executor không hỗ trợ.")
-	return
+    warn("[❌] Không tìm thấy hàm gửi Webhook phù hợp! Executor không hỗ trợ.")
+    return
 end
 
 local lastItemSent = ""
-local totalItems = 0
+local totalItemsReceived = 0  -- Biến đếm tổng số vật phẩm nhận được
 
 local function sendWebhook(itemName)
-	totalItems += 1
-	local data = {
-		username = Player.Name .. " - AFK Bot",
-		embeds = {{
-			title = "🎁 Nhận được vật phẩm mới!",
-			description = "**" .. itemName .. "**",
-			color = 65280,
-			footer = {
-				text = "🧮 Tổng số vật phẩm đã nhận: " .. totalItems
-			}
-		}}
-	}
-	local success, err = pcall(function()
-		requestFunc({
-			Url = WebhookURL,
-			Method = "POST",
-			Headers = {
-				["Content-Type"] = "application/json"
-			},
-			Body = HttpService:JSONEncode(data)
-		})
-	end)
+    local data = {
+        username = Player.Name .. " - AFK Bot",
+        embeds = {{
+            title = "🎁 Vật phẩm nhận được",
+            description = "**" .. itemName .. "**",
+            color = 65280
+        }}
+    }
 
-	if success then
-		print("[✅] Gửi thành công:", itemName, "| Tổng:", totalItems)
-	else
-		warn("[❌] Lỗi gửi webhook:", err)
-	end
+    -- Thêm thông tin tổng số vật phẩm đã nhận vào webhook
+    table.insert(data.embeds, {
+        title = "Tổng vật phẩm đã nhận",
+        description = "**" .. totalItemsReceived .. "**",
+        color = 16776960  -- Màu sắc khác để phân biệt
+    })
+
+    local success, err = pcall(function()
+        requestFunc({
+            Url = WebhookURL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode(data)
+        })
+    end)
+
+    if success then
+        print("[✅] Đã gửi item:", itemName, "Tổng vật phẩm đã nhận:", totalItemsReceived)
+    else
+        warn("[❌] Lỗi gửi webhook:", err)
+    end
 end
 
 scrollingFrame.ChildAdded:Connect(function(child)
-	task.wait(0.2)
-	local label = child:FindFirstChild("RewardName")
-	if label and label:IsA("TextLabel") then
-		local itemName = label.Text
-		if itemName and itemName ~= lastItemSent then
-			lastItemSent = itemName
-			sendWebhook(itemName)
-		end
-	end
+    task.wait(0.2)
+    local label = child:FindFirstChild("RewardName")
+    if label and label:IsA("TextLabel") then
+        local itemName = label.Text
+        if itemName and itemName ~= lastItemSent then
+            lastItemSent = itemName
+            totalItemsReceived = totalItemsReceived + 1  -- Cập nhật tổng số vật phẩm đã nhận
+            sendWebhook(itemName)
+        end
+    end
 end)
 
-print("[👀] Đang theo dõi vật phẩm nhận được từ AFK...")
+print("[👀] Đang theo dõi phần thưởng AFK...")

@@ -44,14 +44,14 @@ return function()
         return
     end
 
-    -- Gửi webhook theo định dạng yêu cầu
+    -- Gửi webhook
     local function sendWebhook(itemName)
-        totalItems = totalItems + 1
+        totalItems = totalItems + 1  -- Cập nhật tổng số vật phẩm nhận
         local data = {
             username = "AFK Rewards Bot",
             embeds = {{
                 title = "🎁 Nhận được vật phẩm mới!",
-                description = string.format("```\n⭐️ **%s**\n🧮 Tổng số vật phẩm đã nhận: `%d`\n👤 Người nhận: **%s**\n```",
+                description = string.format("⭐️ **%s**\n🧮 Tổng số vật phẩm đã nhận: `%d`\n👤 Người nhận: **%s**",
                     itemName, totalItems, Player.Name),
                 color = 65280  -- Màu sắc của Embed (màu xanh lá cây)
             }}
@@ -83,8 +83,7 @@ return function()
             local itemName = rewardNameLabel.Text
             if itemName and itemName ~= lastItemSent then
                 lastItemSent = itemName  -- Cập nhật item vừa nhận
-                -- Gửi thông tin kết quả game theo định dạng yêu cầu
-                sendWebhook(itemName)  -- Gửi item vừa nhận
+                sendWebhook(itemName)  -- Gửi webhook cho item mới
             end
         end
     end

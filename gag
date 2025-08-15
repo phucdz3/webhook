@@ -1,89 +1,71 @@
--- ⚠ Chạy trên Roblox executor
--- Cấu hình
-local targetName = "TênNgườiNhận" -- Người sẽ nhận pet
-local petsToTrade = {"Bee", "Koi"} -- Danh sách pet muốn gửi
+-- ⚠ Chạy trên executor
+local TARGET_NAME = "TenNguoiNhan"
+local PETS = { "Bee", "Koi" }  -- đúng tên base, KHÔNG kèm [weight/age]
 
--- Dịch vụ Roblox
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local LP = Players.LocalPlayer
 
--- RemoteEvent trong game GAG
-local PetGiftingService = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
-local AcceptPetGift = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("AcceptPetGift")
-local GiftPet = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("GiftPet")
+local GameEvents = RS:WaitForChild("GameEvents", 10)
+local PetGiftingService = GameEvents and GameEvents:WaitForChild("PetGiftingService", 10)
+local AcceptPetGift = GameEvents and GameEvents:WaitForChild("AcceptPetGift", 10)
+local GiftPet = GameEvents and GameEvents:WaitForChild("GiftPet", 10)
+assert(PetGiftingService and AcceptPetGift and GiftPet, "Không tìm thấy Remote trong ReplicatedStorage/GameEvents")
 
--- Lấy thông tin pet
-local function GetPetData(tool)
-    if not tool or not tool:IsA("Tool") then return nil end
-    local petUUID = tool:GetAttribute("PET_UUID")
-    if not petUUID then return nil end
-    return {Name = tool.Name, UUID = petUUID, Tool = tool}
+local wanted = {}
+for _, n in ipairs(PETS) do wanted[n] = true end
+
+local function baseName(n)
+  local b = n:match("^([^%[]+)")
+  return (b and b:gsub("%s+$","")) or n
 end
 
--- Tìm pet trong inventory
-local function GetPetsInInventory()
-    local pets = {}
-    local function scan(container)
-        for _, item in pairs(container:GetChildren()) do
-            if item:IsA("Tool") and item:GetAttribute("PET_UUID") then
-                local petData = GetPetData(item)
-                if petData then table.insert(pets, petData) end
-            end
-        end
+local function collectPets(container, out)
+  for _, it in ipairs(container:GetChildren()) do
+    if it:IsA("Tool") and it:GetAttribute("PET_UUID") then
+      table.insert(out, it)
     end
-    if LocalPlayer.Character then scan(LocalPlayer.Character) end
-    if LocalPlayer:FindFirstChild("Backpack") then scan(LocalPlayer.Backpack) end
-    return pets
+  end
 end
 
--- Lấy tên pet bỏ thông tin [weight/age]
-local function GetBasePetName(fullPetName)
-    local baseName = fullPetName:match("^([^%[]+)")
-    return baseName and baseName:gsub("%s+$", "") or fullPetName
+local function allPets()
+  local t = {}
+  if LP.Character then collectPets(LP.Character, t) end
+  local bp = LP:FindFirstChild("Backpack")
+  if bp then collectPets(bp, t) end
+  return t
 end
 
--- Kiểm tra pet có trong danh sách trade
-local function IsPetInTradeList(petName)
-    local base = GetBasePetName(petName)
-    for _, p in pairs(petsToTrade) do
-        if p == base then return true end
-    end
-    return false
+local function equip(tool)
+  if not LP.Character then return false end
+  if tool.Parent == LP.Backpack then tool.Parent = LP.Character end
+  return tool.Parent == LP.Character
 end
 
--- Gửi pet cho người nhận
-local function SendPet(petData, targetPlayer)
-    if not petData or not targetPlayer then return false end
-    PetGiftingService:FireServer("GivePet", targetPlayer)
-    print("Đã gửi:", petData.Name, "cho", targetPlayer.Name)
-    task.wait(0.5)
-    return true
+local function shouldSend(tool)
+  return wanted[ baseName(tool.Name) ] == true
 end
 
--- Chấp nhận quà tặng
-local function AcceptGift(giftId)
-    AcceptPetGift:FireServer(true, giftId)
-    print("Đã nhận quà ID:", giftId)
-end
-
--- Sự kiện nhận pet
-GiftPet.OnClientEvent:Connect(function(giftId, petName, senderName)
-    print("Nhận pet từ:", senderName, "-", petName)
-    AcceptGift(giftId)
+-- Auto-accept nếu ai đó tặng lại bạn
+GiftPet.OnClientEvent:Connect(function(giftId)
+  AcceptPetGift:FireServer(true, giftId)
 end)
 
--- Vòng lặp gửi pet
+-- Vòng lặp gửi
 task.spawn(function()
-    while task.wait(5) do
-        local targetPlayer = Players:FindFirstChild(targetName)
-        if targetPlayer and targetPlayer ~= LocalPlayer then
-            local pets = GetPetsInInventory()
-            for _, pet in pairs(pets) do
-                if IsPetInTradeList(pet.Name) then
-                    SendPet(pet, targetPlayer)
-                end
-            end
+  while task.wait(3) do
+    local target = Players:FindFirstChild(TARGET_NAME)
+    if target and target ~= LP then
+      for _, tool in ipairs(allPets()) do
+        if shouldSend(tool) then
+          if equip(tool) then
+            task.wait(0.25)
+            PetGiftingService:FireServer("GivePet", target)
+            print("Đã gửi:", tool.Name, "cho", target.Name)
+            task.wait(0.7)
+          end
         end
+      end
     end
+  end
 end)

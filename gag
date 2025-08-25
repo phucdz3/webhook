@@ -1,32 +1,37 @@
+--// CONFIG
+local DIAMOND_LIMIT = 1000 -- số diamonds cần để đổi acc
+
+--// SERVICES
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Số kim cương cần để đổi acc
-local DIAMOND_LIMIT = 1000
-
--- Hàm lấy số kim cương từ GUI
-local function getDiamonds()
-    local gui = player:WaitForChild("PlayerGui"):WaitForChild("Interface")
-    -- thử tìm ở đây, bạn có thể thay "DiamondCount" nếu tên khác
-    local diamondLabel = gui:FindFirstChild("DiamondCount", true) 
-    if diamondLabel and (diamondLabel:IsA("TextLabel") or diamondLabel:IsA("TextButton")) then
-        local num = tonumber(diamondLabel.Text)
-        return num or 0
-    end
-    return 0
-end
-
--- Hàm đổi acc
+--// Hàm đổi acc
 local function changeAccount()
-    writefile(player.Name .. "_Done.txt", "Completed - Enough Diamonds")
+    -- ghi log ra file
+    pcall(function()
+        writefile(player.Name .. "_Done.txt", "Completed - Enough Diamonds")
+    end)
+
+    -- kick acc hiện tại
     player:Kick("Enough Diamonds! Switching account...")
 end
 
--- Vòng lặp check
-spawn(function()
+--// Cách 1: Dùng sự kiện AttributeChanged (nhẹ, realtime)
+player.AttributeChanged:Connect(function(attr)
+    if attr == "Diamonds" then
+        local diamonds = player:GetAttribute("Diamonds") or 0
+        print("[Diamonds Update]:", diamonds)
+        if diamonds >= DIAMOND_LIMIT then
+            changeAccount()
+        end
+    end
+end)
+
+--// Cách 2: Vòng lặp check định kỳ (backup, chắc ăn)
+task.spawn(function()
     while task.wait(5) do
-        local diamonds = getDiamonds()
-        print("Diamonds:", diamonds)
+        local diamonds = player:GetAttribute("Diamonds") or 0
+        print("[Diamonds Loop]:", diamonds)
         if diamonds >= DIAMOND_LIMIT then
             changeAccount()
             break

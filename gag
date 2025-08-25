@@ -1,71 +1,32 @@
--- ⚠ Chạy trên executor
-local TARGET_NAME = "TenNguoiNhan"
-local PETS = { "Bee", "Koi" }  -- đúng tên base, KHÔNG kèm [weight/age]
+-- ⚠️ Bạn cần chỉnh lại path tới stats/leaderstats của game 99 Nights in the Forest
+-- vì mình không có source chính xác game UI, giả sử nó lưu trong leaderstats["Diamonds"]
 
 local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
-local LP = Players.LocalPlayer
+local player = Players.LocalPlayer
 
-local GameEvents = RS:WaitForChild("GameEvents", 10)
-local PetGiftingService = GameEvents and GameEvents:WaitForChild("PetGiftingService", 10)
-local AcceptPetGift = GameEvents and GameEvents:WaitForChild("AcceptPetGift", 10)
-local GiftPet = GameEvents and GameEvents:WaitForChild("GiftPet", 10)
-assert(PetGiftingService and AcceptPetGift and GiftPet, "Không tìm thấy Remote trong ReplicatedStorage/GameEvents")
+-- Mốc kim cương để đổi acc
+local DIAMOND_LIMIT = 10000  -- thay số này bằng mức bạn cần
 
-local wanted = {}
-for _, n in ipairs(PETS) do wanted[n] = true end
-
-local function baseName(n)
-  local b = n:match("^([^%[]+)")
-  return (b and b:gsub("%s+$","")) or n
-end
-
-local function collectPets(container, out)
-  for _, it in ipairs(container:GetChildren()) do
-    if it:IsA("Tool") and it:GetAttribute("PET_UUID") then
-      table.insert(out, it)
+local function checkDiamonds()
+    local stats = player:FindFirstChild("leaderstats")
+    if stats and stats:FindFirstChild("Diamonds") then
+        return stats.Diamonds.Value
     end
-  end
+    return 0
 end
 
-local function allPets()
-  local t = {}
-  if LP.Character then collectPets(LP.Character, t) end
-  local bp = LP:FindFirstChild("Backpack")
-  if bp then collectPets(bp, t) end
-  return t
+local function changeAccount()
+    writefile(player.Name .. "_Done.txt", "Completed - Enough Diamonds")
+    player:Kick("Enough Diamonds! Switching account...")
 end
 
-local function equip(tool)
-  if not LP.Character then return false end
-  if tool.Parent == LP.Backpack then tool.Parent = LP.Character end
-  return tool.Parent == LP.Character
-end
-
-local function shouldSend(tool)
-  return wanted[ baseName(tool.Name) ] == true
-end
-
--- Auto-accept nếu ai đó tặng lại bạn
-GiftPet.OnClientEvent:Connect(function(giftId)
-  AcceptPetGift:FireServer(true, giftId)
-end)
-
--- Vòng lặp gửi
-task.spawn(function()
-  while task.wait(3) do
-    local target = Players:FindFirstChild(TARGET_NAME)
-    if target and target ~= LP then
-      for _, tool in ipairs(allPets()) do
-        if shouldSend(tool) then
-          if equip(tool) then
-            task.wait(0.25)
-            PetGiftingService:FireServer("GivePet", target)
-            print("Đã gửi:", tool.Name, "cho", target.Name)
-            task.wait(0.7)
-          end
+-- Vòng lặp check liên tục
+spawn(function()
+    while task.wait(5) do
+        local diamonds = checkDiamonds()
+        if diamonds >= DIAMOND_LIMIT then
+            changeAccount()
+            break
         end
-      end
     end
-  end
 end)

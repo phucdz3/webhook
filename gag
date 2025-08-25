@@ -1,30 +1,32 @@
--- ⚠️ Bạn cần chỉnh lại path tới stats/leaderstats của game 99 Nights in the Forest
--- vì mình không có source chính xác game UI, giả sử nó lưu trong leaderstats["Diamonds"]
-
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local DiamondLimit = 2000 -- 💎 chỉnh mức kim cương cần để đổi acc
 
--- Mốc kim cương để đổi acc
-local DIAMOND_LIMIT = 10000  -- thay số này bằng mức bạn cần
-
-local function checkDiamonds()
-    local stats = player:FindFirstChild("leaderstats")
-    if stats and stats:FindFirstChild("Diamonds") then
-        return stats.Diamonds.Value
+-- Lấy số kim cương từ GUI
+local function getDiamonds()
+    local gui = player:WaitForChild("PlayerGui", 10)
+    if gui and gui:FindFirstChild("DiamondCount") then
+        local diamondObj = gui.DiamondCount
+        if diamondObj:IsA("TextLabel") or diamondObj:IsA("TextButton") then
+            local num = tonumber(diamondObj.Text)
+            return num or 0
+        end
     end
     return 0
 end
 
+-- Đổi acc (kick + tạo file báo hiệu)
 local function changeAccount()
     writefile(player.Name .. "_Done.txt", "Completed - Enough Diamonds")
     player:Kick("Enough Diamonds! Switching account...")
 end
 
--- Vòng lặp check liên tục
+-- Vòng lặp kiểm tra
 spawn(function()
     while task.wait(5) do
-        local diamonds = checkDiamonds()
-        if diamonds >= DIAMOND_LIMIT then
+        local diamonds = getDiamonds()
+        print("Diamonds:", diamonds)
+        if diamonds >= DiamondLimit then
             changeAccount()
             break
         end

@@ -1,32 +1,33 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local DiamondLimit = 2000 -- 💎 chỉnh mức kim cương cần để đổi acc
 
--- Lấy số kim cương từ GUI
+-- Số kim cương cần để đổi acc
+local DIAMOND_LIMIT = 1000
+
+-- Hàm lấy số kim cương từ GUI
 local function getDiamonds()
-    local gui = player:WaitForChild("PlayerGui", 10)
-    if gui and gui:FindFirstChild("DiamondCount") then
-        local diamondObj = gui.DiamondCount
-        if diamondObj:IsA("TextLabel") or diamondObj:IsA("TextButton") then
-            local num = tonumber(diamondObj.Text)
-            return num or 0
-        end
+    local gui = player:WaitForChild("PlayerGui"):WaitForChild("Interface")
+    -- thử tìm ở đây, bạn có thể thay "DiamondCount" nếu tên khác
+    local diamondLabel = gui:FindFirstChild("DiamondCount", true) 
+    if diamondLabel and (diamondLabel:IsA("TextLabel") or diamondLabel:IsA("TextButton")) then
+        local num = tonumber(diamondLabel.Text)
+        return num or 0
     end
     return 0
 end
 
--- Đổi acc (kick + tạo file báo hiệu)
+-- Hàm đổi acc
 local function changeAccount()
     writefile(player.Name .. "_Done.txt", "Completed - Enough Diamonds")
     player:Kick("Enough Diamonds! Switching account...")
 end
 
--- Vòng lặp kiểm tra
+-- Vòng lặp check
 spawn(function()
     while task.wait(5) do
         local diamonds = getDiamonds()
         print("Diamonds:", diamonds)
-        if diamonds >= DiamondLimit then
+        if diamonds >= DIAMOND_LIMIT then
             changeAccount()
             break
         end

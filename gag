@@ -10,7 +10,7 @@ end
 -- Hàm kiểm tra Diamonds
 local function checkDiamonds()
     local diamonds = player:GetAttribute("Diamonds") or 0
-    if diamonds >= 1200 then
+    if diamonds >= 1100 then
         print("✅ Acc này có đủ Diamonds:", diamonds)
         writefileyummy()
     else

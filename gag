@@ -1,35 +1,25 @@
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
 local player = Players.LocalPlayer
-local diamondsAttr = "Diamonds"
 
--- Hàm random target
-local function newTarget()
-    return math.random(1000, 1300)
+-- Hàm ghi file báo hiệu cho Yummy Auto
+local function writefileyummy()
+    writefile(player.Name .. ".txt", "Completed-Done")
+    print("📂 Ghi file cho Yummy Auto: " .. player.Name .. ".txt")
 end
-
--- Target Diamonds cho acc này
-local targetDiamonds = newTarget()
-print("🎯 Target Diamonds cho acc này là:", targetDiamonds)
 
 -- Hàm kiểm tra Diamonds
 local function checkDiamonds()
-    local diamonds = player:GetAttribute(diamondsAttr) or 0
-    if diamonds >= targetDiamonds then
-        print("✅ Đạt điều kiện:", diamonds, " / Target:", targetDiamonds)
-
-        -- Ghi file đánh dấu đã xong
-        writefile(player.Name .. ".txt", "Completed-Done")
-
-        -- Đổi acc (teleport lại game -> yummy auto sẽ login acc khác)
-        TeleportService:Teleport(game.PlaceId, player)
+    local diamonds = player:GetAttribute("Diamonds") or 0
+    if diamonds >= 1000 then
+        print("✅ Acc này có đủ Diamonds:", diamonds)
+        writefileyummy()
     else
-        print("❌ Chưa đủ Diamonds:", diamonds, " / Target:", targetDiamonds)
+        print("❌ Chưa đủ Diamonds. Hiện tại:", diamonds)
     end
 end
 
--- Check ngay khi load
-checkDiamonds()
+-- Lắng nghe khi Diamonds thay đổi
+player:GetAttributeChangedSignal("Diamonds"):Connect(checkDiamonds)
 
--- Check mỗi khi Diamonds thay đổi
-player:GetAttributeChangedSignal(diamondsAttr):Connect(checkDiamonds)
+-- Kiểm tra ngay khi join
+checkDiamonds()

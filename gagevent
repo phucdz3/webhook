@@ -1,111 +1,27 @@
-getgenv().ConfigsKaitun = {
-	["Safe Mode"] = false, -- Will be pass all anti cheat (but slow farm)
+getgenv().Mode = "OneClick"
+getgenv().Setting = {
+    ["Team"] = "Pirates", -- Options "Pirates", "Marines"
+    ["FucusOnLevel"] = true,
+    ["Fruits"] = {  -- setting for fruits u want
+        ["Primary"] = { -- if current fruit is not in this list, eat/buy
+            "Dough-Dough",
+            "Dragon-Dragon",
+            "Buddha-Buddha",
+            -- u can configs add mores/remove and must end with , (comma symbol)
+        },
+        ["Normal"] = { -- it just a normal fruit list
+            "Flame-Flame",
+            "Light-Light",
+            "Magma-Magma",
+            -- u can configs add mores/remove and must end with , (comma symbol)
+        }
+        -- run this for get all fruit name `local t={};for _,v in pairs(game.ReplicatedStorage.Remotes.CommF_:InvokeServer("GetFruits"))do table.insert(t,v.Name)end;setclipboard(table.concat(t, "\n"))`
+    },
+    ["Lock Fruits"] = { -- don't use or eat fruits in this list
+        "Yeti-Yeti",
+        "T-Rex-T-Rex"
+    },
+    ["IdleCheck"] = 2, -- every (x) seconds if not moving rejoin
+};
 
-	["Berry Collect"] = true,
-	["Melee"] = {
-		["Death Step"] = true,
-		["Electric Claw"] = true,
-		["Dragon Talon"] = true,
-		["Sharkman Karate"] = true,
-		["Superhuman"] = true,
-		["God Human"] = true,
-	},
-
-	["Sword"] = {
-		-- : World 1
-		["Saber"] = true,
-		["Pole"] = false,
-		-- : World 2
-		["Midnight Blade"] = true,
-		["Shisui"] = true,
-		["Saddi"] = true,
-		["Wando"] = true,
-		["Rengoku"] = true,
-		["True Triple Katana"] = true,
-		-- : World 3
-		["Yama"] = true,
-		["Tushita"] = true,
-		["Canvander"] = true,
-		["Buddy Sword"] = true,
-		["Twin Hooks"] = true,
-		["Hallow Scythe"] = true,
-		["Cursed Dual Katana"] = true,
-	},
-
-	["Gun"] = {
-		-- : World 2
-		["Kabucha"] = true,
-		-- : World 3
-		["Venom Bow"] = true,
-		["Skull Guitar"] = true,
-	},
-
-	["Mastery"] = {
-		["Melee"] = true,
-		["Sword"] = true,
-		["Devil Fruits"] = true,
-
-		["Configs"] = {
-			["Selected All Sword"] = false,
-			["Select Sword"] = {
-				"Saber",
-				"Cursed Dual Katana",
-				"Shark Anchor"
-			},
-		}
-	},
-
-	["Race"] = {
-		["v2"] = true,
-		["v3"] = true,
-		["Locked"] = {
-			["Mink"] = true,
-			["Human"] = true,
-			["Skypiea"] = true,
-			["Fishman"] = true,
-		},
-	},
-
-	["Fruit"] = {
-		["Main Fruit"] = {"Dough-Dough"},
-		["Sec Fruit"] = {"Flame-Flame", "Ice-Ice", "Quake-Quake", "Light-Light", "Dark-Dark", "Spider-Spider", "Rumble-Rumble", "Magma-Magma", "Buddha-Buddha"},
-		["Safe Fruit"] = {
-			"Dough-Dough",
-			"Dragon-Dragon"
-		},
-		["Not Open Door Fruit"] = {
-			"Dough-Dough",
-			"Dragon-Dragon"
-		}
-	},
-
-	["Quest"] = {
-		["Sea3Hop"] = true,
-		
-		["Rainbow Haki"] = true,
-		["Pull Lever"] = true,
-		["Musketeer Hat"] = true,
-		["Dough Mirror"] = true,
-		["Shark Anchor"] = {
-			["Enable"] = true,
-			["Level"] = 2100, -- Level Should More Than This Will Do
-			["MaxMoney"] = 25_000_000,
-			["MinMoney"] = 22_000_000,
-		},
-	},
-
-	["Currency"] = {
-		["Lock Fragment"] = 30_000,
-	},
-
-	["Performance"] = {
-		["White Screen"] = false,
-		["Booster FPS"] = false,
-		["Lock FPS"] = 240,
-		["AFK Timeout"] = 150,
-		
-		["Add/Accept Friends"] = true,
-		["Auto Chat"] = true,
-	},
-}
-loadstring(game:HttpGet("https://api.realaya.xyz/v1/files/l/73mkp0aqyfo4ypy8hvl0nz10lq49fey5.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/xQuartyx/QuartyzScript/main/Loader.lua"))()

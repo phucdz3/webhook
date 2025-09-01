@@ -1,25 +1,62 @@
+--== Auto Raid Fragments Only (Banana Hub) ==--
+-- Mục tiêu: chỉ chạy Raid để kiếm Fragments, KHÔNG awaken
+
+--=== Cấu hình ===--
+local RAID_NAME = "Flame"          -- Gợi ý dễ & nhanh: "Flame", "Light", "Magma", "Rumble"
+local TARGET_FRAGMENTS = 25000     -- Đặt mốc bạn muốn
+local CHECK_INTERVAL = 1           -- giây
+
+--=== Khởi động ===--
+repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local plr = Players.LocalPlayer
 
--- Hàm ghi file báo hiệu cho Yummy Auto
-local function writefileyummy()
-    writefile(player.Name .. ".txt", "Completed-Done")
-    print("📂 Ghi file cho Yummy Auto: " .. player.Name .. ".txt")
-end
+getgenv().Key = "" -- nếu Banana Hub cần key, điền vào
+local BananaURL = "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"
+pcall(function() loadstring(game:HttpGet(BananaURL))() end)
 
--- Hàm kiểm tra Diamonds
-local function checkDiamonds()
-    local diamonds = player:GetAttribute("Diamonds") or 0
-    if diamonds >= 1100 then
-        print("✅ Acc này có đủ Diamonds:", diamonds)
-        writefileyummy()
-    else
-        print("❌ Chưa đủ Diamonds. Hiện tại:", diamonds)
+-- Chờ nút UI của Banana Hub (dấu hiệu đã load xong)
+repeat task.wait() until game:GetService("CoreGui"):FindFirstChild("Banana Cat Hub Btn")
+
+--=== Helper cho Options của Banana Hub ===--
+local function setOpt(name, value)
+    if typeof(Options) == "table" and Options[name] and typeof(Options[name].SetValue) == "function" then
+        pcall(function() Options[name]:SetValue(value) end)
     end
 end
+local function getOpt(name)
+    if typeof(Options) == "table" and Options[name] then
+        return Options[name].Value
+    end
+    return nil
+end
 
--- Lắng nghe khi Diamonds thay đổi
-player:GetAttributeChangedSignal("Diamonds"):Connect(checkDiamonds)
+-- Tắt awaken để giữ Fragments
+setOpt("Auto Awake Fruit", false)
+-- Bật né skill quái trong raid cho an toàn
+setOpt("Auto Dodge Skill Mobs", true)
+-- Chọn loại Raid bạn muốn farm
+setOpt("Select Raid", RAID_NAME)
+-- Bật auto raid
+setOpt("Auto Raid", true)
 
--- Kiểm tra ngay khi join
-checkDiamonds()
+--=== Vòng lặp: dừng khi đủ Fragments ===--
+task.spawn(function()
+    while task.wait(CHECK_INTERVAL) do
+        local frag = (plr:FindFirstChild("Data") and plr.Data:FindFirstChild("Fragments") and plr.Data.Fragments.Value) or 0
+        if frag >= TARGET_FRAGMENTS then
+            -- Dừng auto raid khi đạt mục tiêu
+            setOpt("Auto Raid", false)
+            setOpt("Auto Dodge Skill Mobs", false)
+            -- Tạo dấu hoàn thành (tùy chọn)
+            if writefile then pcall(function() writefile(plr.Name .. "_FRAG_DONE.txt", tostring(frag)) end) end
+            break
+        else
+            -- Đảm bảo vẫn đang bật raid
+            if not getOpt("Auto Raid") then
+                setOpt("Select Raid", RAID_NAME)
+                setOpt("Auto Raid", true)
+            end
+        end
+    end
+end)

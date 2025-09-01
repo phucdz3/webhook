@@ -36,7 +36,7 @@ setOpt("Auto Awake Fruit", false)
 -- Bật né skill quái trong raid cho an toàn
 setOpt("Auto Dodge Skill Mobs", true)
 -- Chọn loại Raid bạn muốn farm
-setOpt("Select Raid", "Light")
+setOpt("Select Raid", RAID_NAME)
 -- Bật auto raid
 setOpt("Auto Raid", true)
 

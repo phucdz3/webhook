@@ -11,7 +11,7 @@ repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
 
-getgenv().Key = "" -- nếu Banana Hub cần key, điền vào
+getgenv().Key = "3df5493413a543e9572eb8b5" -- nếu Banana Hub cần key, điền vào
 local BananaURL = "https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"
 pcall(function() loadstring(game:HttpGet(BananaURL))() end)
 
